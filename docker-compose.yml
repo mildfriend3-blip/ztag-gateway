@@ -69,7 +69,7 @@ services:
       ZTAG_OPA_URL: "http://opa:8181/v1/data/ztag/authz/decision"
       ZTAG_JWT_ALG: "HS256"
       # Supplied from .env (gitignored). Generate with: make env
-      ZTAG_JWT_SECRET: ${ZTAG_JWT_SECRET:?ZTAG_JWT_SECRET is not set - run: make env}
+      ZTAG_JWT_SECRET: "${ZTAG_JWT_SECRET:?missing_secret_run_make_env}"
       ZTAG_JWT_ISSUER: "ztag-idp"
       ZTAG_JWT_AUDIENCE: "ztag-api"
       ZTAG_MAX_TOKEN_TTL: "15m"
@@ -78,7 +78,7 @@ services:
       ZTAG_REQUIRE_DEVICE: "true"
       ZTAG_AUDIT_SINKS: "redis"
       ZTAG_AUDIT_STREAM: "ztag:audit:stream"
-      ZTAG_ADMIN_TOKEN: ${ZTAG_ADMIN_TOKEN:?ZTAG_ADMIN_TOKEN is not set - run: make env}
+      ZTAG_ADMIN_TOKEN: "${ZTAG_ADMIN_TOKEN:?missing_token_run_make_env}"
       # prefix=upstream|scope|flags  (flags: sensitive)
       ZTAG_ROUTES: >-
         /api/orders=http://orders:9000|orders.read|;
@@ -118,7 +118,7 @@ services:
     profiles: ["tools"]
     entrypoint: ["/bin/sh", "-c"]
     environment:
-      ZTAG_JWT_SECRET: ${ZTAG_JWT_SECRET:?ZTAG_JWT_SECRET is not set - run: make env}
+      ZTAG_JWT_SECRET: "${ZTAG_JWT_SECRET:?missing_secret_run_make_env}"
     command: ["ztag-tokengen -sub user-1001 -svc web -did d-7712"]
 
 volumes:
