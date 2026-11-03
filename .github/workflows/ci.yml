@@ -87,4 +87,9 @@ jobs:
           PY
 
       - name: Validate compose file
+        # The compose file requires real secrets by design (${VAR:?...}), so the
+        # syntax check supplies throwaway values that are never used anywhere.
+        env:
+          ZTAG_JWT_SECRET: ci-placeholder-not-a-real-key-0000000000
+          ZTAG_ADMIN_TOKEN: ci-placeholder-not-a-real-token
         run: docker compose config --quiet
