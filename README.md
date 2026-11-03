@@ -43,8 +43,9 @@ instead of downloading.
 | Installation and user manual (12 pages) | [Open the manual](https://mildfriend3-blip.github.io/ztag-gateway/user-manual.pdf) | `docs/user-manual.pdf` |
 | Design, threat model, evaluation | [docs index](https://mildfriend3-blip.github.io/ztag-gateway/) | `docs/DESIGN.md`, `docs/THREAT_MODEL.md`, `docs/EVALUATION.md` |
 
-The deck advances with the arrow keys (`F` for full screen); on a phone, rotate
-to landscape. GitHub does not render HTML files from the repository view, which
+On a laptop the deck advances with the arrow keys (`F` for full screen). On a
+phone, tap the right half of the screen to advance and the left half to go
+back; landscape reads better. GitHub does not render HTML files from the repository view, which
 is why the deck is served from the pages site rather than linked from the file
 tree.
 
