@@ -31,6 +31,23 @@ library plus about 3,000 lines of application code.
 └───────────────┘
 ```
 
+## Documents
+
+Two things a reviewer usually wants before the code: the deck and the manual.
+Both are published as pages on this repository, so they open in a browser
+instead of downloading.
+
+| Document | Read it | In the repository |
+|---|---|---|
+| Review deck (15 slides) | [Open the deck](https://mildfriend3-blip.github.io/ztag-gateway/review-deck.html) | `docs/review-deck.html` |
+| Installation and user manual (12 pages) | [Open the manual](https://mildfriend3-blip.github.io/ztag-gateway/user-manual.pdf) | `docs/user-manual.pdf` |
+| Design, threat model, evaluation | [docs index](https://mildfriend3-blip.github.io/ztag-gateway/) | `docs/DESIGN.md`, `docs/THREAT_MODEL.md`, `docs/EVALUATION.md` |
+
+The deck advances with the arrow keys (`F` for full screen); on a phone, rotate
+to landscape. GitHub does not render HTML files from the repository view, which
+is why the deck is served from the pages site rather than linked from the file
+tree.
+
 ## Why this design
 
 A gateway that checks a static API key or a long-lived session cookie is a

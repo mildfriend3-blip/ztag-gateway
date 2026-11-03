@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zero-Trust Access Gateway — documents</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #5a6673;
+    --steel: #2e5a88;
+    --pale: #94bce3;
+    --rule: #d6dee7;
+    --paper: #f6f7f8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 56px;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  .kicker {
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--steel); font-weight: 700; margin-bottom: 10px;
+  }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 10px; letter-spacing: -0.01em; }
+  p.lede { color: var(--muted); margin: 0 0 28px; font-size: 17px; }
+  h2 {
+    font-size: 13px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--steel); margin: 32px 0 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  a.card {
+    display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--rule); border-radius: 2px; background: #fff;
+    padding: 16px 18px; margin-bottom: 12px;
+  }
+  a.card:active { background: #eef3f8; }
+  a.card .t { font-weight: 650; font-size: 17px; color: var(--steel); }
+  a.card .d { color: var(--muted); font-size: 14.5px; margin-top: 3px; }
+  a.card .m { color: #8b95a1; font-size: 13px; margin-top: 6px; }
+  ul.plain { list-style: none; padding: 0; margin: 0; }
+  ul.plain li { margin-bottom: 10px; }
+  ul.plain a { color: var(--steel); text-decoration: none; }
+  ul.plain a:active { text-decoration: underline; }
+  .note {
+    margin-top: 30px; padding: 14px 16px; border-left: 3px solid var(--pale);
+    background: #eef3f8; color: var(--muted); font-size: 14.5px;
+  }
+  footer {
+    margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--rule);
+    color: #8b95a1; font-size: 13px;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<main>
+  <div class="kicker">Capstone · 2026</div>
+  <h1>Distributed zero-trust access gateway</h1>
+  <p class="lede">Every request re-proves identity, device and permission before it reaches an internal service.</p>
+
+  <h2>Present and read</h2>
+
+  <a class="card" href="./review-deck.html">
+    <div class="t">Review deck</div>
+    <div class="d">Fifteen slides: the problem, the seven checks, what each control costs, and where the design stops.</div>
+    <div class="m">Arrow keys or a swipe to advance · F for full screen · best in landscape on a phone</div>
+  </a>
+
+  <a class="card" href="./user-manual.pdf">
+    <div class="t">Installation and user manual</div>
+    <div class="d">Twelve pages: prerequisites, both install paths, first request, configuration, operation, Kubernetes, troubleshooting.</div>
+    <div class="m">PDF · opens in the browser</div>
+  </a>
+
+  <h2>The argument in writing</h2>
+  <ul class="plain">
+    <li><a href="./DESIGN.md">Design</a> — components, request lifecycle, failure modes, performance choices.</li>
+    <li><a href="./THREAT_MODEL.md">Threat model</a> — the three attack classes, the controls, and the residual risk of each.</li>
+    <li><a href="./EVALUATION.md">Evaluation</a> — how each claim is measured, the reference run, and its threats to validity.</li>
+  </ul>
+
+  <h2>Source</h2>
+  <ul class="plain">
+    <li><a href="https://github.com/mildfriend3-blip/ztag-gateway">github.com/mildfriend3-blip/ztag-gateway</a></li>
+    <li><a href="https://github.com/mildfriend3-blip/ztag-gateway/releases/tag/v0.1.0">Release v0.1.0</a></li>
+  </ul>
+
+  <div class="note">
+    To run it: <code>git clone</code> the repository, then <code>make env &amp;&amp; make up &amp;&amp; make smoke</code>.
+    No credentials are committed — <code>make env</code> generates them, and the gateway refuses to start without a signing key.
+  </div>
+
+  <footer>Mild Friend · fourth year · MIT licence · Go 1.23, OPA, Redis, Kubernetes</footer>
+</main>
+</body>
+</html>
