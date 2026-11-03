@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ztag-gateway-config
+  namespace: ztag
+data:
+  ZTAG_LISTEN: ":8443"
+  ZTAG_REDIS_ADDR: "redis.ztag.svc.cluster.local:6379"
+  ZTAG_OPA_URL: "http://opa.ztag.svc.cluster.local:8181/v1/data/ztag/authz/decision"
+  ZTAG_JWT_ALG: "HS256"
+  ZTAG_JWT_ISSUER: "ztag-idp"
+  ZTAG_JWT_AUDIENCE: "ztag-api"
+  ZTAG_MAX_TOKEN_TTL: "15m"
+  ZTAG_RATE_LIMIT: "120"
+  ZTAG_RATE_WINDOW: "1m"
+  ZTAG_REQUIRE_DEVICE: "true"
+  ZTAG_POLICY_FAIL_OPEN: "false"
+  ZTAG_RATELIMIT_FAIL_OPEN: "false"
+  ZTAG_AUDIT_SINKS: "redis"
+  ZTAG_AUDIT_STREAM: "ztag:audit:stream"
+  ZTAG_ROUTES: "/api/orders=http://orders.ztag.svc.cluster.local:9000|orders.read|;/api/payments=http://orders.ztag.svc.cluster.local:9000|payments.write|sensitive;/api/login=http://auth.ztag.svc.cluster.local:9000|auth.login|sensitive;/api/admin=http://auth.ztag.svc.cluster.local:9000|admin.write|sensitive"

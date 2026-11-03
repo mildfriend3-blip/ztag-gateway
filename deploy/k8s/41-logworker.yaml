@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: logworker
+      namespace: ztag
+      labels:
+        app: logworker
+    spec:
+      # One replica per consumer in the group; scale out freely, the group
+      # hands each replica a disjoint slice of the stream.
+      replicas: 2
+      selector:
+        matchLabels:
+          app: logworker
+      template:
+        metadata:
+          labels:
+            app: logworker
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: logworker
+              image: ghcr.io/example/ztag-gateway:0.1.0
+              command: ["/usr/local/bin/ztag-logworker"]
+              args:
+                - "-redis=redis.ztag.svc.cluster.local:6379"
+                - "-stream=ztag:audit:stream"
+                - "-group=audit-writers"
+                - "-out=/var/log/ztag/audit.jsonl"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: audit
+                  mountPath: /var/log/ztag
+          volumes:
+            - name: audit
+              emptyDir: {}

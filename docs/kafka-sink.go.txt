@@ -1,0 +1,59 @@
+//go:build kafka
+
+// This file is excluded from the default build so the gateway keeps zero
+// third-party dependencies. Enable it when the deployment already runs Kafka:
+//
+//	go get github.com/segmentio/kafka-go
+//	go build -tags kafka ./cmd/proxy
+//
+// The only thing that changes is which Sink the audit engine gets; the request
+// path, the queue and the drop-under-pressure behaviour are identical.
+
+package audit
+
+import (
+	"context"
+	"time"
+
+	"github.com/segmentio/kafka-go"
+)
+
+// KafkaSink publishes audit events to a Kafka topic, keyed by subject so that
+// all activity for one identity lands in the same partition and stays ordered.
+type KafkaSink struct {
+	w *kafka.Writer
+}
+
+// NewKafkaSink builds a sink for brokers/topic.
+func NewKafkaSink(brokers []string, topic string) *KafkaSink {
+	return &KafkaSink{w: &kafka.Writer{
+		Addr:         kafka.TCP(brokers...),
+		Topic:        topic,
+		Balancer:     &kafka.Hash{},
+		RequiredAcks: kafka.RequireOne,
+		Async:        false,
+		BatchTimeout: 5 * time.Millisecond,
+	}}
+}
+
+// Name implements Sink.
+func (s *KafkaSink) Name() string { return "kafka" }
+
+// WriteBatch implements Sink.
+func (s *KafkaSink) WriteBatch(ctx context.Context, events []*Event) error {
+	msgs := make([]kafka.Message, 0, len(events))
+	for _, ev := range events {
+		b, err := Marshal(ev)
+		if err != nil {
+			continue
+		}
+		msgs = append(msgs, kafka.Message{Key: []byte(ev.Subject), Value: b})
+	}
+	if len(msgs) == 0 {
+		return nil
+	}
+	return s.w.WriteMessages(ctx, msgs...)
+}
+
+// Close implements Sink.
+func (s *KafkaSink) Close() error { return s.w.Close() }

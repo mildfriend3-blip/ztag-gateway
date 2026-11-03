@@ -1,0 +1,126 @@
+# Distributed Zero-Trust Access Gateway - local topology
+#
+#   client -> gateway -> OPA (decision)
+#                    \-> redis (revocation + sliding window)
+#                    \-> orders / auth (internal services)
+#                    \-> redis stream -> logworker -> audit JSONL
+#
+# Every port except the gateway is internal to the compose network, which is
+# the container-level equivalent of the Kubernetes NetworkPolicy in deploy/k8s.
+
+name: ztag
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379" # remove in any real deployment
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 30
+    volumes:
+      - redis-data:/data
+
+  opa:
+    image: openpolicyagent/opa:1.0.0
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=error"
+      - "/policies"
+    volumes:
+      - ./policies:/policies:ro
+    ports:
+      - "8181:8181" # remove in any real deployment
+    healthcheck:
+      test: ["CMD", "/opa", "eval", "--fail-defined", "true"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  orders:
+    build: .
+    entrypoint: ["/usr/local/bin/ztag-echo"]
+    command: ["-addr=:9000", "-service=orders"]
+    expose:
+      - "9000"
+
+  auth:
+    build: .
+    entrypoint: ["/usr/local/bin/ztag-echo"]
+    command: ["-addr=:9000", "-service=auth"]
+    expose:
+      - "9000"
+
+  gateway:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+      opa:
+        condition: service_started
+    environment:
+      ZTAG_LISTEN: ":8443"
+      ZTAG_REDIS_ADDR: "redis:6379"
+      ZTAG_OPA_URL: "http://opa:8181/v1/data/ztag/authz/decision"
+      ZTAG_JWT_ALG: "HS256"
+      # Supplied from .env (gitignored). Generate with: make env
+      ZTAG_JWT_SECRET: ${ZTAG_JWT_SECRET:?ZTAG_JWT_SECRET is not set - run: make env}
+      ZTAG_JWT_ISSUER: "ztag-idp"
+      ZTAG_JWT_AUDIENCE: "ztag-api"
+      ZTAG_MAX_TOKEN_TTL: "15m"
+      ZTAG_RATE_LIMIT: "60"
+      ZTAG_RATE_WINDOW: "1m"
+      ZTAG_REQUIRE_DEVICE: "true"
+      ZTAG_AUDIT_SINKS: "redis"
+      ZTAG_AUDIT_STREAM: "ztag:audit:stream"
+      ZTAG_ADMIN_TOKEN: ${ZTAG_ADMIN_TOKEN:?ZTAG_ADMIN_TOKEN is not set - run: make env}
+      # prefix=upstream|scope|flags  (flags: sensitive)
+      ZTAG_ROUTES: >-
+        /api/orders=http://orders:9000|orders.read|;
+        /api/payments=http://orders:9000|payments.write|sensitive;
+        /api/login=http://auth:9000|auth.login|sensitive;
+        /api/admin=http://auth:9000|admin.write|sensitive
+    ports:
+      - "8443:8443"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512M
+
+  logworker:
+    build: .
+    entrypoint: ["/usr/local/bin/ztag-logworker"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    command:
+      - "-redis=redis:6379"
+      - "-stream=ztag:audit:stream"
+      - "-group=audit-writers"
+      - "-out=/var/log/ztag/audit.jsonl"
+    volumes:
+      - audit-data:/var/log/ztag
+
+  # One-shot helper profile: docker compose run --rm tools
+  tools:
+    build: .
+    profiles: ["tools"]
+    entrypoint: ["/bin/sh", "-c"]
+    environment:
+      ZTAG_JWT_SECRET: ${ZTAG_JWT_SECRET:?ZTAG_JWT_SECRET is not set - run: make env}
+    command: ["ztag-tokengen -sub user-1001 -svc web -did d-7712"]
+
+volumes:
+  redis-data:
+  audit-data:

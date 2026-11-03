@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: false
+
+      - name: Verify formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Unit tests
+        run: go test ./... -count=1
+
+      - name: Build binaries
+        run: |
+          mkdir -p bin
+          go build -trimpath -o bin/ztag-proxy ./cmd/proxy
+          go build -trimpath -o bin/ztag-logworker ./cmd/logworker
+          go build -trimpath -o bin/ztag-tokengen ./cmd/tokengen
+          go build -trimpath -o bin/ztag-loadgen ./cmd/loadgen
+          go build -trimpath -o bin/ztag-echo ./cmd/echo
+
+  policy:
+    name: Policy tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OPA
+        run: |
+          curl -sSL -o /usr/local/bin/opa \
+            https://github.com/open-policy-agent/opa/releases/download/v1.0.0/opa_linux_amd64_static
+          chmod +x /usr/local/bin/opa
+          opa version
+
+      - name: Rego formatting
+        run: opa fmt --fail policies
+
+      - name: Policy unit tests
+        run: opa test policies -v
+
+  manifests:
+    name: Manifests and compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Kubernetes manifests
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          bad = 0
+          for f in sorted(glob.glob("deploy/k8s/*.yaml")):
+              try:
+                  docs = [d for d in yaml.safe_load_all(open(f)) if d]
+                  print(f"{f}: {len(docs)} document(s)")
+              except Exception as e:
+                  print(f"{f}: {e}")
+                  bad = 1
+          sys.exit(bad)
+          PY
+
+      - name: Validate compose file
+        run: docker compose config --quiet

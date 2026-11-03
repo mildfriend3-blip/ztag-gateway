@@ -1,0 +1,17 @@
+# build artefacts
+/bin/
+*.test
+*.out
+coverage.*
+
+# local runtime state and generated secrets
+.env
+.env.local
+*.jsonl
+audit*.log
+.env
+
+# editor / OS noise
+.DS_Store
+.idea/
+.vscode/

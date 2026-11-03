@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ztag
+
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secret.yaml
+  - 10-redis-service.yaml
+  - 11-redis-statefulset.yaml
+  - 20-opa-configmap.yaml
+  - 21-opa-service.yaml
+  - 22-opa-deployment.yaml
+  - 30-gateway-deployment.yaml
+  - 31-gateway-service.yaml
+  - 31b-gateway-hpa.yaml
+  - 32-gateway-pdb.yaml
+  - 40-upstreams.yaml
+  - 41-logworker.yaml
+  - 50-networkpolicy.yaml
+
+images:
+  - name: ghcr.io/example/ztag-gateway
+    newTag: 0.1.0
+
+commonLabels:
+  app.kubernetes.io/part-of: ztag

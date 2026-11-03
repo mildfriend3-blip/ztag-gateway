@@ -1,0 +1,6 @@
+bin/
+.git/
+.github/
+docs/
+*.md
+audit-data/

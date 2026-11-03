@@ -1,0 +1,194 @@
+apiVersion: v1
+kind: List
+items:
+  # ---- default deny -------------------------------------------------------
+  # Nothing in the namespace may talk to anything, in either direction, unless
+  # a policy below explicitly permits it. This is the network half of
+  # microsegmentation; OPA is the identity half.
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: default-deny-all
+      namespace: ztag
+    spec:
+      podSelector: {}
+      policyTypes: ["Ingress", "Egress"]
+
+  # ---- gateway ------------------------------------------------------------
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: gateway-ingress
+      namespace: ztag
+    spec:
+      podSelector:
+        matchLabels:
+          app: gateway
+      policyTypes: ["Ingress"]
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: ingress-nginx
+          ports:
+            - protocol: TCP
+              port: 8443
+
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: gateway-egress
+      namespace: ztag
+    spec:
+      podSelector:
+        matchLabels:
+          app: gateway
+      policyTypes: ["Egress"]
+      egress:
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: opa
+          ports:
+            - protocol: TCP
+              port: 8181
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: redis
+          ports:
+            - protocol: TCP
+              port: 6379
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: orders
+            - podSelector:
+                matchLabels:
+                  app: auth
+          ports:
+            - protocol: TCP
+              port: 9000
+        # DNS
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kube-system
+          ports:
+            - protocol: UDP
+              port: 53
+            - protocol: TCP
+              port: 53
+
+  # ---- internal services --------------------------------------------------
+  # Only the gateway may reach them, and they may reach nothing but DNS. A
+  # compromised pod cannot start scanning the namespace.
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: upstreams-ingress-from-gateway
+      namespace: ztag
+    spec:
+      podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: ["orders", "auth"]
+      policyTypes: ["Ingress"]
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: gateway
+          ports:
+            - protocol: TCP
+              port: 9000
+
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: upstreams-egress-dns-only
+      namespace: ztag
+    spec:
+      podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: ["orders", "auth"]
+      policyTypes: ["Egress"]
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kube-system
+          ports:
+            - protocol: UDP
+              port: 53
+
+  # ---- stateful dependencies ---------------------------------------------
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: redis-ingress
+      namespace: ztag
+    spec:
+      podSelector:
+        matchLabels:
+          app: redis
+      policyTypes: ["Ingress"]
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: gateway
+            - podSelector:
+                matchLabels:
+                  app: logworker
+          ports:
+            - protocol: TCP
+              port: 6379
+
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: opa-ingress
+      namespace: ztag
+    spec:
+      podSelector:
+        matchLabels:
+          app: opa
+      policyTypes: ["Ingress"]
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: gateway
+          ports:
+            - protocol: TCP
+              port: 8181
+
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: logworker-egress
+      namespace: ztag
+    spec:
+      podSelector:
+        matchLabels:
+          app: logworker
+      policyTypes: ["Egress"]
+      egress:
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: redis
+          ports:
+            - protocol: TCP
+              port: 6379
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kube-system
+          ports:
+            - protocol: UDP
+              port: 53

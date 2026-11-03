@@ -1,0 +1,56 @@
+{
+  "ztag": {
+    "min_trust": 50,
+    "max_token_ttl_s": 900,
+    "routes": {
+      "/api/orders": {
+        "scopes": [
+          "orders.read"
+        ],
+        "allowed_services": [
+          "web",
+          "mobile"
+        ],
+        "require_device_binding": true,
+        "methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      "/api/payments": {
+        "scopes": [
+          "payments.write"
+        ],
+        "allowed_services": [
+          "web"
+        ],
+        "require_device_binding": true,
+        "require_mfa": true,
+        "methods": [
+          "POST"
+        ]
+      },
+      "/api/admin": {
+        "scopes": [
+          "admin.write"
+        ],
+        "allowed_services": [
+          "ops-console"
+        ],
+        "require_device_binding": true,
+        "require_mfa": true
+      },
+      "/api/login": {
+        "scopes": [],
+        "allowed_services": [
+          "web",
+          "mobile"
+        ],
+        "require_device_binding": false,
+        "methods": [
+          "POST"
+        ]
+      }
+    }
+  }
+}
